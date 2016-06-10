@@ -23,12 +23,6 @@
         android:layout_height="50dp"
         android:gravity="center_horizontal"
         android:hint="user key"/>
-    <EditText
-        android:id="@+id/input_text"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:gravity="center_horizontal"
-        android:hint="text"/>
     <Button
         android:id="@+id/send_button"
         android:layout_width="match_parent"

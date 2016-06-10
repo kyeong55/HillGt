@@ -1,8 +1,14 @@
 package com.example.taegyeong.hillgt;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,16 +25,11 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String FIREBASE_URL = "https://hillgt.firebaseIO.com";
-    private final String PREFS_KEY_USERID = "hillgt_userid";
-    private final String PREFS_KEY_READLENGTH = "hillgt_read_length";
+    private NunchiService nunchiService;
 
     private String userID;
     private String userName;
-    private int readLength;
     private Map<String,String> userList;
-    private Firebase rootRef;
-    private ValueEventListener mConnectedListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,9 +37,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        Firebase.setAndroidContext(this);
-        rootRef = new Firebase(FIREBASE_URL);
 
         userID = getIntent().getStringExtra("user_id");
         userName = getIntent().getStringExtra("user_name");
@@ -60,22 +58,27 @@ public class MainActivity extends AppCompatActivity {
 
         Button sendButton = (Button) findViewById(R.id.send_button);
         final EditText targetId = (EditText) findViewById(R.id.to_id);
-        final EditText inputText = (EditText) findViewById(R.id.input_text);
         assert sendButton != null;
         assert targetId != null;
-        assert inputText != null;
         sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 //                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                        .setAction("Action", null).show();
-                writeMsg(targetId.getText().toString(),inputText.getText().toString());
+//                writeMsg(targetId.getText().toString(),inputText.getText().toString());
+                hillgt(targetId.getText().toString());
             }
         });
+
+        Intent nunchiIntent = new Intent(this, NunchiService.class);
+        nunchiIntent.putExtra("user_id", getIntent().getStringExtra("user_id"));
+        nunchiIntent.putExtra("user_name", getIntent().getStringExtra("user_name"));
+        startService(nunchiIntent);
+        bindService(nunchiIntent, nunchiConnection, Context.BIND_AUTO_CREATE);
     }
 
     public void writeMsg(String id,String msg){
-        rootRef.child(id).setValue(msg);
+        nunchiService.rootRef.child(id).setValue(msg);
     }
 
 //    @Override
@@ -100,62 +103,48 @@ public class MainActivity extends AppCompatActivity {
 //        return super.onOptionsItemSelected(item);
 //    }
 
+
     @Override
-    public void onStart(){
-        super.onStart();
-        mConnectedListener = rootRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                boolean connected = (Boolean) dataSnapshot.getValue();
-                if (connected) {
-                    Toast.makeText(MainActivity.this, "Connected to Firebase", Toast.LENGTH_SHORT).show();
-                    getUserList();
-
-                } else {
-                    Toast.makeText(MainActivity.this, "Disconnected from Firebase", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-                // No-op
-            }
-        });
-    }
-    @Override
-    public void onStop() {
-        super.onStop();
-        rootRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
+    public void onDestroy() {
+        unbindService(nunchiConnection);
+        super.onDestroy();
     }
 
-    public void getUserList(){
-        final String userListKey = "UserList";
-        final Firebase userListRef = rootRef.child(userListKey);
-
-        userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-//                Log.w("debugging", dataSnapshot.toString());
-//                Log.w("debugging", dataSnapshot.getValue().toString());
-                userList = (HashMap) dataSnapshot.getValue();
-                if(userList == null) {
-                    userListRef.setValue(userList);
-                    Map<String, String> newUser = new HashMap<>();
-                    newUser.put(userID,userName);
-                    userListRef.setValue(newUser);
-                }
-                else if (!userList.containsKey(userID)) {
-                    Map<String, String> newUser = new HashMap<>();
-                    newUser.put(userID,userName);
-                    userListRef.setValue(newUser);
-                }
+    private ServiceConnection nunchiConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            nunchiService = ((NunchiService.NunchiBinder) service).getService();
+            if (nunchiService.connected) {
             }
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {}
-        });
-    }
+            else {
+                nunchiService.mConnectedListener = nunchiService.rootRef.getRoot().child(".info/connected")
+                        .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        nunchiService.connected = (Boolean) dataSnapshot.getValue();
+                        if (nunchiService.connected) {
+                            nunchiService.getUserList();
+                            nunchiService.addListener();
+                        } else {
+                        }
+                    }
+                    @Override
+                    public void onCancelled(FirebaseError firebaseError) {
+                    }
+                });
+            }
+        }
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+        }
+    };
 
-    public void hillgt(String targetUser){
-        rootRef.child(targetUser).push().setValue("hillgt");
+    public void hillgt(String targetUser) {
+        Map<String,String> newHillgt = new HashMap<>();
+        newHillgt.put("id",userID);
+        newHillgt.put("name",userName);
+        newHillgt.put("timestamp",""+System.currentTimeMillis());
+        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(targetUser).push()
+                .setValue(newHillgt);
     }
 }
