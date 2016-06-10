@@ -1,10 +1,8 @@
 package com.example.taegyeong.hillgt;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,9 +14,8 @@ import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,8 +26,8 @@ public class MainActivity extends AppCompatActivity {
     private String userID;
     private String userName;
     private int readLength;
-    private List<String> userList;
-    private Firebase mFirebaseRef;
+    private Map<String,String> userList;
+    private Firebase rootRef;
     private ValueEventListener mConnectedListener;
 
     @Override
@@ -41,23 +38,25 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         Firebase.setAndroidContext(this);
+        rootRef = new Firebase(FIREBASE_URL);
 
-        setupUser();
-
-        mFirebaseRef = new Firebase(FIREBASE_URL);
+        userID = getIntent().getStringExtra("user_id");
+        userName = getIntent().getStringExtra("user_name");
+        TextView idText = (TextView) findViewById(R.id.user_id);
+        assert idText != null;
+        idText.setText("Your ID: "+ userID);
 
         final TextView msgText = (TextView) findViewById(R.id.msg);
 
         assert msgText != null;
-        mFirebaseRef.child(userID).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-//                System.out.println(snapshot.getValue());  //prints "Do you have data? You'll love Firebase."
-                if (snapshot.getValue() != null)
-                    msgText.setText(snapshot.getValue().toString());
-            }
-            @Override public void onCancelled(FirebaseError error) { }
-        });
+//        rootRef.child(userID).addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot snapshot) {
+//                if (snapshot.getValue() != null)
+//                    msgText.setText(snapshot.getValue().toString());
+//            }
+//            @Override public void onCancelled(FirebaseError error) { }
+//        });
 
         Button sendButton = (Button) findViewById(R.id.send_button);
         final EditText targetId = (EditText) findViewById(R.id.to_id);
@@ -76,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void writeMsg(String id,String msg){
-        mFirebaseRef.child(id).setValue(msg);
+        rootRef.child(id).setValue(msg);
     }
 
 //    @Override
@@ -104,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStart(){
         super.onStart();
-        mConnectedListener = mFirebaseRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
+        mConnectedListener = rootRef.getRoot().child(".info/connected").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 boolean connected = (Boolean) dataSnapshot.getValue();
@@ -126,54 +125,37 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onStop() {
         super.onStop();
-        mFirebaseRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
-    }
-
-    private void setupUser() {
-        SharedPreferences prefs = getApplication().getSharedPreferences("ChatPrefs", 0);
-        userID = prefs.getString(PREFS_KEY_USERID, null);
-        readLength = prefs.getInt(PREFS_KEY_READLENGTH,-1);
-        if (userID == null) {
-            Random r = new Random();
-            // Assign a random user name if we don't have one saved.
-            userID = "User_" + r.nextInt(100000);
-            prefs.edit().putString(PREFS_KEY_USERID, userID).commit();
-        }
-        if (readLength < 0) {
-            readLength = 0;
-            prefs.edit().putInt(PREFS_KEY_READLENGTH,0).commit();
-        }
-
-        TextView idText = (TextView) findViewById(R.id.user_id);
-        assert idText != null;
-        idText.setText("Your ID: "+ userID);
+        rootRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
     }
 
     public void getUserList(){
-        final String userListKey = "userIdList";
-        Firebase firebaseUserList = mFirebaseRef.child(userListKey);
+        final String userListKey = "UserList";
+        final Firebase userListRef = rootRef.child(userListKey);
 
-        firebaseUserList.addListenerForSingleValueEvent(new ValueEventListener() {
+        userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
 //                Log.w("debugging", dataSnapshot.toString());
 //                Log.w("debugging", dataSnapshot.getValue().toString());
-                userList = (List<String>) dataSnapshot.getValue();
+                userList = (HashMap) dataSnapshot.getValue();
                 if(userList == null) {
-                    userList = new ArrayList<>();
-                    userList.add(userID);
-                    mFirebaseRef.child(userListKey).setValue(userList);
+                    userListRef.setValue(userList);
+                    Map<String, String> newUser = new HashMap<>();
+                    newUser.put(userID,userName);
+                    userListRef.setValue(newUser);
                 }
-                else if (userList.indexOf(userID) < 0) {
-                    userList.add(userID);
-                    mFirebaseRef.child(userListKey).setValue(userList);
+                else if (!userList.containsKey(userID)) {
+                    Map<String, String> newUser = new HashMap<>();
+                    newUser.put(userID,userName);
+                    userListRef.setValue(newUser);
                 }
             }
-
             @Override
-            public void onCancelled(FirebaseError firebaseError) {
-
-            }
+            public void onCancelled(FirebaseError firebaseError) {}
         });
+    }
+
+    public void hillgt(String targetUser){
+        rootRef.child(targetUser).push().setValue("hillgt");
     }
 }
