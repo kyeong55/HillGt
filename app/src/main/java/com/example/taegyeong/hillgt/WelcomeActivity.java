@@ -43,14 +43,14 @@ public class WelcomeActivity extends AppCompatActivity {
             Snackbar.make(findViewById(R.id.welcome_view), "Type your name for HillGt!", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         else {
-            Random r = new Random();
-            String userID = "User_"+r.nextInt(100000);
+//            Random r = new Random();
+//            String userID = "User_"+r.nextInt(100000);
             SharedPreferences prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
-            prefs.edit().putString(PREFS_KEY_USERID, userID).commit();
+//            prefs.edit().putString(PREFS_KEY_USERID, userID).commit();
             prefs.edit().putString(PREFS_KEY_USERNAME, userName).commit();
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.putExtra("user_id", userID);
+//            intent.putExtra("user_id", userID);
             intent.putExtra("user_name", userName);
             startActivity(intent);
         }

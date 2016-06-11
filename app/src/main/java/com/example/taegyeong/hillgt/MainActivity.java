@@ -44,9 +44,9 @@ public class MainActivity extends AppCompatActivity {
         assert idText != null;
         idText.setText("Your ID: "+ userID);
 
-        final TextView msgText = (TextView) findViewById(R.id.msg);
+//        final TextView msgText = (TextView) findViewById(R.id.msg);
 
-        assert msgText != null;
+//        assert msgText != null;
 //        rootRef.child(userID).addValueEventListener(new ValueEventListener() {
 //            @Override
 //            public void onDataChange(DataSnapshot snapshot) {
@@ -121,10 +121,12 @@ public class MainActivity extends AppCompatActivity {
                         .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
+                        Log.d("debugging","service connected");
                         nunchiService.connected = (Boolean) dataSnapshot.getValue();
                         if (nunchiService.connected) {
+                            Log.d("debugging","server connected");
                             nunchiService.getUserList();
-                            nunchiService.addListener();
+//                            nunchiService.addListener();
                         } else {
                         }
                     }

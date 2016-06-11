@@ -84,16 +84,32 @@ public class NunchiService extends Service {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 userList = (HashMap) dataSnapshot.getValue();
                 if(userList == null) {
-                    userListRef.setValue(userList);
-                    Map<String, String> newUser = new HashMap<>();
-                    newUser.put(userID,userName);
-                    userListRef.setValue(newUser);
+//                    userListRef.setValue(userList);
+//                    Map<String, String> newUser = new HashMap<>();
+//                    newUser.put(userID,userName);
+//                    userListRef.setValue(newUser);
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(userName);
+                    userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",userID).commit();
+                }
+                else if (userID == null) {
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(userName);
+                    userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",userID).commit();
                 }
                 else if (!userList.containsKey(userID)) {
-                    Map<String, String> newUser = new HashMap<>();
-                    newUser.put(userID,userName);
-                    userListRef.setValue(newUser);
+//                    Map<String, String> newUser = new HashMap<>();
+//                    newUser.put(userID,userName);
+//                    userListRef.setValue(newUser);
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(userName);
+                    userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",userID).commit();
                 }
+                if (userList.containsKey(userID))
+                    addListener();
             }
             @Override
             public void onCancelled(FirebaseError firebaseError) {}
@@ -130,6 +146,7 @@ public class NunchiService extends Service {
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
                 Map<String,String> addedHillgt = (HashMap)snapshot.getValue();
                 Log.d("debugging",addedHillgt.toString());
+                Log.d("noti!!!",addedHillgt.get("name"));
                 int notificationID = makeNotification(addedHillgt.get("name"));
                 new HillgtNunchiTask().execute(notificationID);
             }
@@ -176,7 +193,6 @@ public class NunchiService extends Service {
         public void onPostExecute(Integer result) {
             super.onPostExecute(result);
             notificationManager.cancel(result);
-
         }
     }
 }
