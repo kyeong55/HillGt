@@ -8,4 +8,17 @@
     <dimen name="welcome_text_input">28sp</dimen>
     <dimen name="welcome_text_button">18sp</dimen>
     <dimen name="welcome_button_height">40dp</dimen>
+
+    <dimen name="info_image_width">120dp</dimen>
+    <dimen name="info_image_height">60dp</dimen>
+    <dimen name="info_user_name_size">36sp</dimen>
+    <dimen name="info_user_detail_size">20sp</dimen>
+    <dimen name="info_status_text_size">36sp</dimen>
+    <dimen name="info_status_text_padding">24dp</dimen>
+    <dimen name="info_history_username">32sp</dimen>
+    <dimen name="info_history_time">32sp</dimen>
+
+    <dimen name="userlist_list_margin">12dp</dimen>
+    <dimen name="userlist_text_size">36sp</dimen>
+    <dimen name="userlist_elem_height">80dp</dimen>
 </resources>

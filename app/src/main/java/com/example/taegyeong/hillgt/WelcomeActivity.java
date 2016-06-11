@@ -70,7 +70,7 @@ public class WelcomeActivity extends AppCompatActivity {
             warningText.startAnimation(alphaAni);
             warningText.setVisibility(View.VISIBLE);
         }
-        else if (userName.length() == 0) {
+        else if (!isValidName(userName)) {
             Animation alphaAni = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.text_visible);
             warningText.startAnimation(alphaAni);
             warningText.setVisibility(View.VISIBLE);
@@ -88,5 +88,16 @@ public class WelcomeActivity extends AppCompatActivity {
             startActivity(intent);
 //            overridePendingTransition(R.anim.trans_activity_slide_left_in, R.anim.trans_activity_slide_left_out);
         }
+    }
+
+    private boolean isValidName(String newName) {
+        if (newName.length() == 0)
+            return false;
+        String available = " QWERTYUIOPASDFGHJKLZXCVBNM1234567890-!@#$%^&*()_?/";
+        for (int i=0;i<newName.length();i++) {
+            if (available.indexOf(newName.charAt(i)) < 0)
+                return false;
+        }
+        return true;
     }
 }

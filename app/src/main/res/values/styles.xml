@@ -30,7 +30,7 @@
     <style name="AppTheme.NunchiMain">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="colorPrimaryDark">@color/colorTheme4</item>
+        <item name="colorPrimaryDark">@color/colorTheme3</item>
     </style>
 
 </resources>

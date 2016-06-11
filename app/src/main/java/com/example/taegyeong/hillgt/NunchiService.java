@@ -14,6 +14,7 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
 
 import java.util.HashMap;
@@ -32,9 +33,14 @@ public class NunchiService extends Service {
     public ValueEventListener mConnectedListener;
     public boolean connected;
     public ChildEventListener childEventListener;
+    public ValueEventListener valueEventListener;
     public String userID;
     public String userName;
     public Map<String,String> userListMap;
+    public Map<String,Map<String,String>> todayHistoryMap;
+    public int totalHistory;
+
+    public boolean isBinded;
 
     private final IBinder mBinder = new NunchiBinder();
 
@@ -52,6 +58,13 @@ public class NunchiService extends Service {
         rootRef = new Firebase(FIREBASE_URL);
         return mBinder;
     }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        isBinded = false;
+        return super.onUnbind(intent);
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         userID = intent.getStringExtra("user_id");
@@ -70,10 +83,11 @@ public class NunchiService extends Service {
         rootRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
         super.onDestroy();
     }
-
+/*
     public void addListener(){
         if (childEventListener != null) {
-            rootRef.child(HILLGT_REF).child(userID).removeEventListener(childEventListener);
+            return;
+//            rootRef.child(HILLGT_REF).child(userID).removeEventListener(childEventListener);
         }
         childEventListener = new ChildEventListener() {
             @Override
@@ -89,8 +103,8 @@ public class NunchiService extends Service {
         };
         rootRef.child(HILLGT_REF).child(userID).addChildEventListener(childEventListener);
     }
-
-    public int makeNotification(String hillgter) {
+*/
+    public void makeNotification(String hillgter) {
 //        Intent intent = new Intent(this, MainActivity.class);
 //        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 //        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
@@ -108,7 +122,7 @@ public class NunchiService extends Service {
         Random r = new Random();
         int notificationID = r.nextInt(100000);
         notificationManager.notify(notificationID, notificationBuilder.build());
-        return notificationID;
+        new HillgtNunchiTask().execute(notificationID);
     }
 
     public class HillgtNunchiTask extends AsyncTask<Integer, Void, Integer> {

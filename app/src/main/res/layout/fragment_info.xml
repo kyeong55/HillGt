@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/colorTheme1">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:background="@color/colorTheme3"
+        android:layout_marginBottom="4dp"
+        android:elevation="2dp">
+        <ImageView
+            android:src="@drawable/face_300px"
+            android:layout_width="@dimen/info_image_width"
+            android:layout_height="@dimen/info_image_height"
+            android:layout_margin="32dp"
+            android:scaleType="centerCrop" />
+        <TextView
+            android:id="@+id/info_user_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="YJCHANG"
+            android:textColor="@color/colorBlack"
+            android:textSize="@dimen/info_user_name_size"/>
+        <TextView
+            android:id="@+id/info_user_detail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:text="247 Hillgt Sent"
+            android:textColor="@color/colorBlack"
+            android:textSize="@dimen/info_user_detail_size"/>
+    </LinearLayout>
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/info_history"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+</LinearLayout>

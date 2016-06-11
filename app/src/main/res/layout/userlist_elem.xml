@@ -5,13 +5,13 @@
     <TextView
         android:id="@+id/userlist_elem_username"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="4dp"
-        android:textSize="32sp"
+        android:layout_height="@dimen/userlist_elem_height"
+        android:textSize="@dimen/userlist_text_size"
         android:textStyle="bold"
-        android:textColor="@color/colorTheme4"
+        android:textColor="@color/colorBlack"
         android:gravity="center" />
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/colorDivider"></FrameLayout>
 </LinearLayout>

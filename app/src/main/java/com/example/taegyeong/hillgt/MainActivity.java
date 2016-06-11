@@ -7,24 +7,26 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
 
-import org.w3c.dom.Text;
-
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SharedPreferences prefs;
 
-    private UserListAdapter userListAdapter;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,17 +50,14 @@ public class MainActivity extends AppCompatActivity {
 
         prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
 
-        TextView toolbar = (TextView) findViewById(R.id.toolbar);
-        TextView subtitle = (TextView) findViewById(R.id.subtitle);
-        assert toolbar != null;
-        assert subtitle != null;
-        toolbar.setTypeface(BrandonTypeface.branBold);
-        subtitle.setTypeface(BrandonTypeface.branRegular
-        );
+        ViewPager mViewPager = (ViewPager) findViewById(R.id.view_pager);
+        assert mViewPager != null;
+
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
+        mViewPager.setAdapter(mSectionsPagerAdapter);
 
 //        userID = getIntent().getStringExtra("user_id");
 //        userName = getIntent().getStringExtra("user_name");
-
 
         Intent nunchiIntent = new Intent(this, NunchiService.class);
         nunchiIntent.putExtra("user_id", getIntent().getStringExtra("user_id"));
@@ -67,31 +66,11 @@ public class MainActivity extends AppCompatActivity {
         bindService(nunchiIntent, nunchiConnection, Context.BIND_AUTO_CREATE);
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.menu_main, menu);
-//        return true;
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.action_settings) {
-//            return true;
-//        }
-//
-//        return super.onOptionsItemSelected(item);
-//    }
-
-
     @Override
     public void onDestroy() {
+        nunchiService.rootRef.child("UserList").removeEventListener(nunchiService.valueEventListener);
+        nunchiService.valueEventListener = null;
+        nunchiService.isBinded = false;
         unbindService(nunchiConnection);
         super.onDestroy();
     }
@@ -100,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onServiceConnected(ComponentName className, IBinder service) {
             nunchiService = ((NunchiService.NunchiBinder) service).getService();
+            nunchiService.isBinded = true;
             if (nunchiService.connected) {
                 getUserList();
             }
@@ -134,48 +114,199 @@ public class MainActivity extends AppCompatActivity {
         final String userListKey = "UserList";
         final Firebase userListRef = nunchiService.rootRef.child(userListKey);
 
-        userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        if (nunchiService.valueEventListener == null)
+            nunchiService.valueEventListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    nunchiService.userListMap = (HashMap) dataSnapshot.getValue();
+                    if(nunchiService.userListMap == null) {
+                        Firebase newRef = userListRef.push();
+                        newRef.setValue(nunchiService.userName);
+                        nunchiService.userID = newRef.getKey();
+                        prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                    }
+                    else if (nunchiService.userID == null) {
+                        Firebase newRef = userListRef.push();
+                        newRef.setValue(nunchiService.userName);
+                        nunchiService.userID = newRef.getKey();
+                        prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                    }
+                    else if (!nunchiService.userListMap.containsKey(nunchiService.userID)) {
+                        Firebase newRef = userListRef.push();
+                        newRef.setValue(nunchiService.userName);
+                        nunchiService.userID = newRef.getKey();
+                        prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                    }
+                    if (nunchiService.userListMap != null) {
+                        if (nunchiService.userListMap.containsKey(nunchiService.userID)) {
+                            mSectionsPagerAdapter.setUserListView(nunchiService);
+                            addListener();
+                        }
+                    }
+                }
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {}
+            };
+
+        userListRef.addValueEventListener(nunchiService.valueEventListener);
+
+        Firebase fb = nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID);
+        fb.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                nunchiService.userListMap = (HashMap) dataSnapshot.getValue();
-                if(nunchiService.userListMap == null) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(nunchiService.userName);
-                    nunchiService.userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
-                }
-                else if (nunchiService.userID == null) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(nunchiService.userName);
-                    nunchiService.userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
-                }
-                else if (!nunchiService.userListMap.containsKey(nunchiService.userID)) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(nunchiService.userName);
-                    nunchiService.userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
-                }
-                if (nunchiService.userListMap.containsKey(nunchiService.userID)) {
-                    setUserList();
-                    nunchiService.addListener();
-                }
+                Map<String,Map<String,String>> historyMap = (HashMap) dataSnapshot.getValue();
+                nunchiService.totalHistory = historyMap.size();
             }
             @Override
-            public void onCancelled(FirebaseError firebaseError) {}
+            public void onCancelled(FirebaseError firebaseError) {
+            }
         });
     }
 
-    public void setUserList(){
-        userListAdapter = new UserListAdapter(getApplicationContext(),nunchiService);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+    public void addListener(){
+        if (nunchiService.childEventListener != null) {
+            return;
+//            rootRef.child(HILLGT_REF).child(userID).removeEventListener(childEventListener);
+        }
+        nunchiService.childEventListener = new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
+                Map<String,String> addedHillgt = (HashMap)snapshot.getValue();
+                nunchiService.makeNotification(addedHillgt.get("name"));
+                nunchiService.totalHistory += 1;
+                if (nunchiService.isBinded)
+                    updateHistory();
+            }
+            @Override public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
+            @Override public void onChildRemoved(DataSnapshot dataSnapshot) {}
+            @Override public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
+            @Override public void onCancelled(FirebaseError firebaseError) {}
+        };
+        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID)
+                .addChildEventListener(nunchiService.childEventListener);
+    }
 
-        RecyclerView fileListView = (RecyclerView) findViewById(R.id.userlist);
-        assert fileListView != null;
-        fileListView.setHasFixedSize(true);
-        fileListView.setLayoutManager(layoutManager);
-        fileListView.setAdapter(userListAdapter);
-        fileListView.setVerticalScrollBarEnabled(true);
+    public void updateHistory() {
+        Query q = nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID).orderByChild("timestamp").startAt(getToday());
+        q.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                nunchiService.todayHistoryMap = (HashMap) dataSnapshot.getValue();
+                mSectionsPagerAdapter.setHistoryView(nunchiService);
+            }
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {
+            }
+        });
+    }
+
+    public String getToday(){
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        return ""+cal.getTimeInMillis();
+    }
+
+    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+
+        InfoFragment infoFragment;
+        UserListFragment userListFragment;
+
+        public SectionsPagerAdapter(FragmentManager fm) {
+            super(fm);
+            infoFragment = new InfoFragment();
+            userListFragment = new UserListFragment();
+        }
+
+        @Override
+        public Fragment getItem(int position) {
+            switch (position) {
+                case 0:
+                    return userListFragment;
+                case 1:
+                    return infoFragment;
+                default:
+                    return null;
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 2;
+        }
+
+        public void setUserListView(NunchiService nunchiService) {
+            userListFragment.setUserList(nunchiService);
+        }
+
+        public void setHistoryView(NunchiService nunchiService) {
+            infoFragment.setHistoryList(nunchiService);
+        }
+    }
+
+    public class InfoFragment extends Fragment {
+
+        public RecyclerView historyView;
+        public HistoryAdapter historyAdapter;
+
+        public InfoFragment() {
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_info, container, false);
+            TextView userName = (TextView) rootView.findViewById(R.id.info_user_name);
+            TextView userDetail = (TextView) rootView.findViewById(R.id.info_user_detail);
+            historyView = (RecyclerView) rootView.findViewById(R.id.info_history);
+            assert userName != null;
+            assert userDetail != null;
+            assert historyView != null;
+            userName.setTypeface(BrandonTypeface.branBold);
+            userDetail.setTypeface(BrandonTypeface.branRegular);
+            return rootView;
+        }
+
+        public void setHistoryList(NunchiService nunchiService) {
+            historyAdapter = new HistoryAdapter(getApplicationContext(),nunchiService);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+            layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+            historyView.setHasFixedSize(true);
+            historyView.setLayoutManager(layoutManager);
+            historyView.setAdapter(historyAdapter);
+            historyView.setVerticalScrollBarEnabled(true);
+        }
+    }
+
+    public class UserListFragment extends Fragment {
+
+        public RecyclerView userListView;
+        public UserListAdapter userListAdapter;
+
+        public UserListFragment() {
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_userlist, container, false);
+            userListView = (RecyclerView) rootView.findViewById(R.id.userlist);
+            assert userListView != null;
+            return rootView;
+        }
+
+        public void setUserList(NunchiService nunchiService){
+            userListAdapter = new UserListAdapter(getApplicationContext(),nunchiService);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+            layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+            userListView.setHasFixedSize(true);
+            userListView.setLayoutManager(layoutManager);
+            userListView.setAdapter(userListAdapter);
+            userListView.setVerticalScrollBarEnabled(true);
+        }
     }
 }

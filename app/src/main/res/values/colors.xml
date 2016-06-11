@@ -15,4 +15,5 @@
     <color name="colorWhiteGray">#FAFAFA</color>
     <color name="colorBlack">#000000</color>
     <color name="colorText">#797979</color>
+    <color name="colorDivider">#50000000</color>
 </resources>

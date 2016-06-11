@@ -4,8 +4,12 @@
 
     <string name="welcome_start">시작</string>
     <string name="welcome_instruction">Your name</string>
-    <string name="welcome_warning">Type your name to start HillGt</string>
+    <string name="welcome_warning">Invalid name (must be capitalized English name)</string>
     <string name="welcome_start_button">Start HillGt</string>
+
+    <string name="info_user_detail"> Hillgt Sent</string>
+    <string name="info_status_today">TODAY</string>
+    <string name="info_status_total">TOTAL</string>
 
     <string name="noti_text">님이 힐끗 보는 중 입니다</string>
 </resources>

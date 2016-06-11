@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,7 +64,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         Map<String,String> newHillgt = new HashMap<>();
         newHillgt.put("id",service.userID);
         newHillgt.put("name",service.userName);
-        newHillgt.put("timestamp",""+System.currentTimeMillis());
+        newHillgt.put("timestamp",""+ Calendar.getInstance().getTimeInMillis());//System.currentTimeMillis());
         service.rootRef.child(service.HILLGT_REF).child(targetUser).push()
                 .setValue(newHillgt);
     }
@@ -82,6 +83,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         public ViewHolder(View itemView) {
             super(itemView);
             userNameText = (TextView)itemView.findViewById(R.id.userlist_elem_username);
+            userNameText.setTypeface(BrandonTypeface.branBold);
         }
     }
 }

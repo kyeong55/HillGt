@@ -40,7 +40,8 @@
             android:background="@null"
             android:textStyle="bold"
             android:textSize="@dimen/welcome_text_input"
-            android:textColor="@color/colorWhite" />
+            android:textColor="@color/colorWhite"
+            android:inputType="textCapCharacters"/>
 
         <TextView
             android:id="@+id/welcome_warning"
