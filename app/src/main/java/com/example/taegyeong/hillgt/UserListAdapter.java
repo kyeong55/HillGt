@@ -2,6 +2,7 @@ package com.example.taegyeong.hillgt;
 
 import android.support.v7.widget.RecyclerView;
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,33 +20,52 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
     private String[] userIDs;
     private String[] userNames;
 
-    public UserListAdapter(Context context, Map<String,String> userList){
+    private NunchiService service;
+
+    public UserListAdapter(Context context, NunchiService service){
         this.context = context;
-        userIDs = new String[userList.size()];
-        userNames = new String[userList.size()];
+        this.service = service;
+        userIDs = new String[service.userListMap.size()];
+        userNames = new String[service.userListMap.size()];
         int index=0;
-        for(Map.Entry<String,String> mapEntry : userList.entrySet()) {
+        for(Map.Entry<String,String> mapEntry : service.userListMap.entrySet()) {
             userIDs[index] = mapEntry.getKey();
             userNames[index] = mapEntry.getValue();
+            Log.d("debugging_userlist",mapEntry.toString());
+            Log.d("debugging_userlist",userNames[index]);
             index++;
         }
     }
 
     @Override
     public UserListAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = null;
-        v= LayoutInflater.from(parent.getContext()).inflate(R.layout.userlist_elem,parent,false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.userlist_elem,parent,false);
         return new ViewHolder(v);
     }
 
     @Override
     public void onBindViewHolder(UserListAdapter.ViewHolder holder, final int position) {
         holder.userNameText.setText(userNames[position]);
+        holder.userNameText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestHillgt(userIDs[position]);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
         return userIDs.length;
+    }
+
+    public void requestHillgt(String targetUser) {
+        Map<String,String> newHillgt = new HashMap<>();
+        newHillgt.put("id",service.userID);
+        newHillgt.put("name",service.userName);
+        newHillgt.put("timestamp",""+System.currentTimeMillis());
+        service.rootRef.child(service.HILLGT_REF).child(targetUser).push()
+                .setValue(newHillgt);
     }
 
 //    @Override

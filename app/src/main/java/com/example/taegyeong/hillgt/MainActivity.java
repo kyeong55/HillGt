@@ -4,9 +4,12 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
@@ -27,9 +30,12 @@ public class MainActivity extends AppCompatActivity {
 
     private NunchiService nunchiService;
 
-    private String userID;
-    private String userName;
-    private Map<String,String> userList;
+//    private String userID;
+//    private String userName;
+
+    private SharedPreferences prefs;
+
+    private UserListAdapter userListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,47 +44,17 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        userID = getIntent().getStringExtra("user_id");
-        userName = getIntent().getStringExtra("user_name");
-        TextView idText = (TextView) findViewById(R.id.user_id);
-        assert idText != null;
-        idText.setText("Your ID: "+ userID);
+        prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
 
-//        final TextView msgText = (TextView) findViewById(R.id.msg);
+//        userID = getIntent().getStringExtra("user_id");
+//        userName = getIntent().getStringExtra("user_name");
 
-//        assert msgText != null;
-//        rootRef.child(userID).addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot snapshot) {
-//                if (snapshot.getValue() != null)
-//                    msgText.setText(snapshot.getValue().toString());
-//            }
-//            @Override public void onCancelled(FirebaseError error) { }
-//        });
-
-        Button sendButton = (Button) findViewById(R.id.send_button);
-        final EditText targetId = (EditText) findViewById(R.id.to_id);
-        assert sendButton != null;
-        assert targetId != null;
-        sendButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//                writeMsg(targetId.getText().toString(),inputText.getText().toString());
-                hillgt(targetId.getText().toString());
-            }
-        });
 
         Intent nunchiIntent = new Intent(this, NunchiService.class);
         nunchiIntent.putExtra("user_id", getIntent().getStringExtra("user_id"));
         nunchiIntent.putExtra("user_name", getIntent().getStringExtra("user_name"));
         startService(nunchiIntent);
         bindService(nunchiIntent, nunchiConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    public void writeMsg(String id,String msg){
-        nunchiService.rootRef.child(id).setValue(msg);
     }
 
 //    @Override
@@ -115,18 +91,16 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className, IBinder service) {
             nunchiService = ((NunchiService.NunchiBinder) service).getService();
             if (nunchiService.connected) {
+                getUserList();
             }
             else {
                 nunchiService.mConnectedListener = nunchiService.rootRef.getRoot().child(".info/connected")
                         .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Log.d("debugging","service connected");
                         nunchiService.connected = (Boolean) dataSnapshot.getValue();
                         if (nunchiService.connected) {
-                            Log.d("debugging","server connected");
-                            nunchiService.getUserList();
-//                            nunchiService.addListener();
+                            getUserList();
                         } else {
                         }
                     }
@@ -141,12 +115,61 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    public void hillgt(String targetUser) {
-        Map<String,String> newHillgt = new HashMap<>();
-        newHillgt.put("id",userID);
-        newHillgt.put("name",userName);
-        newHillgt.put("timestamp",""+System.currentTimeMillis());
-        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(targetUser).push()
-                .setValue(newHillgt);
+//    public void hillgt(String targetUser) {
+//        Map<String,String> newHillgt = new HashMap<>();
+//        newHillgt.put("id",userID);
+//        newHillgt.put("name",userName);
+//        newHillgt.put("timestamp",""+System.currentTimeMillis());
+//        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(targetUser).push()
+//                .setValue(newHillgt);
+//    }
+
+    public void getUserList(){
+        final String userListKey = "UserList";
+        final Firebase userListRef = nunchiService.rootRef.child(userListKey);
+
+        userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                nunchiService.userListMap = (HashMap) dataSnapshot.getValue();
+                if(nunchiService.userListMap == null) {
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(nunchiService.userName);
+                    nunchiService.userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                }
+                else if (nunchiService.userID == null) {
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(nunchiService.userName);
+                    nunchiService.userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                }
+                else if (!nunchiService.userListMap.containsKey(nunchiService.userID)) {
+                    Firebase newRef = userListRef.push();
+                    newRef.setValue(nunchiService.userName);
+                    nunchiService.userID = newRef.getKey();
+                    prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
+                }
+                if (nunchiService.userListMap.containsKey(nunchiService.userID)) {
+                    setUserList();
+                    nunchiService.addListener();
+                }
+            }
+            @Override
+            public void onCancelled(FirebaseError firebaseError) {}
+        });
+    }
+
+    public void setUserList(){
+        userListAdapter = new UserListAdapter(getApplicationContext(),nunchiService);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+        RecyclerView fileListView = (RecyclerView) findViewById(R.id.userlist);
+        assert fileListView != null;
+        fileListView.setHasFixedSize(true);
+        fileListView.setLayoutManager(layoutManager);
+        fileListView.setAdapter(userListAdapter);
+        fileListView.setVerticalScrollBarEnabled(true);
     }
 }

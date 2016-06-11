@@ -15,7 +15,6 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
 
 import java.util.HashMap;
@@ -33,11 +32,10 @@ public class NunchiService extends Service {
     public Firebase rootRef;
     public ValueEventListener mConnectedListener;
     public boolean connected;
-    private String userID;
-    private String userName;
-    public Map<String,String> userList;
-
-    SharedPreferences prefs;
+    public ChildEventListener childEventListener;
+    public String userID;
+    public String userName;
+    public Map<String,String> userListMap;
 
     private final IBinder mBinder = new NunchiBinder();
 
@@ -65,7 +63,6 @@ public class NunchiService extends Service {
     @Override
     public void onCreate(){
         super.onCreate();
-        prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
         connected = false;
     }
 
@@ -74,7 +71,7 @@ public class NunchiService extends Service {
         rootRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
         super.onDestroy();
     }
-
+/*
     public void getUserList(){
         final String userListKey = "UserList";
         final Firebase userListRef = rootRef.child(userListKey);
@@ -82,12 +79,8 @@ public class NunchiService extends Service {
         userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                userList = (HashMap) dataSnapshot.getValue();
-                if(userList == null) {
-//                    userListRef.setValue(userList);
-//                    Map<String, String> newUser = new HashMap<>();
-//                    newUser.put(userID,userName);
-//                    userListRef.setValue(newUser);
+                userListMap = (HashMap) dataSnapshot.getValue();
+                if(userListMap == null) {
                     Firebase newRef = userListRef.push();
                     newRef.setValue(userName);
                     userID = newRef.getKey();
@@ -99,49 +92,26 @@ public class NunchiService extends Service {
                     userID = newRef.getKey();
                     prefs.edit().putString("hillgt_userid",userID).commit();
                 }
-                else if (!userList.containsKey(userID)) {
-//                    Map<String, String> newUser = new HashMap<>();
-//                    newUser.put(userID,userName);
-//                    userListRef.setValue(newUser);
+                else if (!userListMap.containsKey(userID)) {
                     Firebase newRef = userListRef.push();
                     newRef.setValue(userName);
                     userID = newRef.getKey();
                     prefs.edit().putString("hillgt_userid",userID).commit();
                 }
-                if (userList.containsKey(userID))
+                if (userListMap.containsKey(userID))
                     addListener();
             }
             @Override
             public void onCancelled(FirebaseError firebaseError) {}
         });
     }
+    */
 
     public void addListener(){
-        rootRef.child(HILLGT_REF).child(userID).addChildEventListener(new ChildEventListener() {
-            /*
-            @Override
-            public void onDataChange(DataSnapshot snapshot) {
-                if (snapshot.getValue() != null) {
-//                    msgText.setText(snapshot.getValue().toString());
-                    if (snapshot.getValue() != null) {
-                        Log.d("debugging", snapshot.getValue().toString());
-                        Map<String,Map> recvHillgt = (HashMap) snapshot.getValue();
-                        for (String key : recvHillgt.keySet()) {
-                            Map<String,String> hillgetMap = recvHillgt.get(key);
-                            Log.d("debugging", hillgetMap.toString());
-                            int notificationID = makeNotification(hillgetMap.get("name"));
-                            new HillgtNunchiTask().execute(notificationID);
-                            if (lastTimestamp.compareTo(hillgetMap.get("timestamp")) < 0) {
-                                lastTimestamp = hillgetMap.get("timestamp");
-                                Log.d("new time stamp",lastTimestamp);
-                            }
-                        }
-//                        rootRef.child(HILLGT_REF).child(userID).removeValue();
-                        prefs.edit().putString("lastTimeStamp",lastTimestamp).commit();
-                    }
-                }
-            }
-            */
+        if (childEventListener != null) {
+            rootRef.child(HILLGT_REF).child(userID).removeEventListener(childEventListener);
+        }
+        childEventListener = new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
                 Map<String,String> addedHillgt = (HashMap)snapshot.getValue();
@@ -154,7 +124,8 @@ public class NunchiService extends Service {
             @Override public void onChildRemoved(DataSnapshot dataSnapshot) {}
             @Override public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
             @Override public void onCancelled(FirebaseError firebaseError) {}
-        });
+        };
+        rootRef.child(HILLGT_REF).child(userID).addChildEventListener(childEventListener);
     }
 
     public int makeNotification(String hillgter) {
