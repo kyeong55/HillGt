@@ -4,7 +4,6 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
@@ -71,41 +70,6 @@ public class NunchiService extends Service {
         rootRef.getRoot().child(".info/connected").removeEventListener(mConnectedListener);
         super.onDestroy();
     }
-/*
-    public void getUserList(){
-        final String userListKey = "UserList";
-        final Firebase userListRef = rootRef.child(userListKey);
-
-        userListRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                userListMap = (HashMap) dataSnapshot.getValue();
-                if(userListMap == null) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(userName);
-                    userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",userID).commit();
-                }
-                else if (userID == null) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(userName);
-                    userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",userID).commit();
-                }
-                else if (!userListMap.containsKey(userID)) {
-                    Firebase newRef = userListRef.push();
-                    newRef.setValue(userName);
-                    userID = newRef.getKey();
-                    prefs.edit().putString("hillgt_userid",userID).commit();
-                }
-                if (userListMap.containsKey(userID))
-                    addListener();
-            }
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {}
-        });
-    }
-    */
 
     public void addListener(){
         if (childEventListener != null) {
@@ -115,8 +79,6 @@ public class NunchiService extends Service {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
                 Map<String,String> addedHillgt = (HashMap)snapshot.getValue();
-                Log.d("debugging",addedHillgt.toString());
-                Log.d("noti!!!",addedHillgt.get("name"));
                 int notificationID = makeNotification(addedHillgt.get("name"));
                 new HillgtNunchiTask().execute(notificationID);
             }
@@ -137,8 +99,8 @@ public class NunchiService extends Service {
 //        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentTitle("HillGt")
-                .setContentText(hillgter+"님이 힐끗 보는 중 입니다")
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(hillgter+getString(R.string.noti_text))
                 .setAutoCancel(true);
 //                .setSound(defaultSoundUri)
 //                .setContentIntent(pendingIntent);

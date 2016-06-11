@@ -9,19 +9,67 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".WelcomeActivity"
     android:orientation="vertical"
-    android:id="@+id/welcome_view">
+    android:id="@+id/welcome_view"
+    android:background="@color/colorTheme3">
 
-    <EditText
-        android:id="@+id/welcome_name"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/welcome_instruction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/welcome_instruction"
+            android:textColor="@color/colorWhite"
+            android:textSize="@dimen/welcome_text_detail"/>
+
+        <EditText
+            android:id="@+id/welcome_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:imeActionId="@+id/welcome_done"
+            android:imeActionLabel="@string/welcome_start"
+            android:imeOptions="actionDone"
+            android:background="@null"
+            android:textStyle="bold"
+            android:textSize="@dimen/welcome_text_input"
+            android:textColor="@color/colorWhite" />
+
+        <TextView
+            android:id="@+id/welcome_warning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/welcome_warning"
+            android:textColor="@color/colorTheme4"
+            android:visibility="invisible"
+            android:textSize="@dimen/welcome_text_detail"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="your name"
-        android:gravity="center"/>
-
-    <Button
-        android:id="@+id/welcome_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Start HillGt!"/>
+        android:orientation="horizontal">
+        <android.support.v4.widget.Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="4"/>
+        <TextView
+            android:id="@+id/welcome_button"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/welcome_button_height"
+            android:layout_weight="3"
+            android:gravity="center"
+            android:background="@drawable/welcome_button_selector"
+            android:textColor="@color/colorTheme4"
+            android:text="@string/welcome_start_button"
+            android:textSize="@dimen/welcome_text_button"/>
+    </LinearLayout>
 
 </LinearLayout>

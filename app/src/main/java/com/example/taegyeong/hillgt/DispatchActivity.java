@@ -18,18 +18,20 @@ public class DispatchActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dispatch);
+        BrandonTypeface.setupTypeface(getAssets());
         setupUser();
     }
 
     private void setupUser() {
         SharedPreferences prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
-//        prefs.edit().remove(PREFS_KEY_USERID).commit();
+//        prefs.edit().remove(PREFS_KEY_USERID).apply();
         String userID = prefs.getString(PREFS_KEY_USERID, null);
         String userName = prefs.getString(PREFS_KEY_USERNAME, null);
         if ((userID == null)||(userName == null)) {
             Intent intent = new Intent(this, WelcomeActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
+            overridePendingTransition(0, 0);
         }
         else {
             Intent intent = new Intent(this, MainActivity.class);
@@ -37,6 +39,7 @@ public class DispatchActivity extends AppCompatActivity {
             intent.putExtra("user_id",userID);
             intent.putExtra("user_name",userName);
             startActivity(intent);
+            overridePendingTransition(0, 0);
         }
     }
 }

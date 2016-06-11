@@ -23,6 +23,8 @@ import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 
+import org.w3c.dom.Text;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,10 +43,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
         prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
+
+        TextView toolbar = (TextView) findViewById(R.id.toolbar);
+        TextView subtitle = (TextView) findViewById(R.id.subtitle);
+        assert toolbar != null;
+        assert subtitle != null;
+        toolbar.setTypeface(BrandonTypeface.branBold);
+        subtitle.setTypeface(BrandonTypeface.branRegular
+        );
 
 //        userID = getIntent().getStringExtra("user_id");
 //        userName = getIntent().getStringExtra("user_name");
@@ -102,6 +112,11 @@ public class MainActivity extends AppCompatActivity {
                         if (nunchiService.connected) {
                             getUserList();
                         } else {
+                            if (nunchiService.childEventListener != null) {
+                                nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID)
+                                        .removeEventListener(nunchiService.childEventListener);
+                                nunchiService.childEventListener = null;
+                            }
                         }
                     }
                     @Override
@@ -114,15 +129,6 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceDisconnected(ComponentName arg0) {
         }
     };
-
-//    public void hillgt(String targetUser) {
-//        Map<String,String> newHillgt = new HashMap<>();
-//        newHillgt.put("id",userID);
-//        newHillgt.put("name",userName);
-//        newHillgt.put("timestamp",""+System.currentTimeMillis());
-//        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(targetUser).push()
-//                .setValue(newHillgt);
-//    }
 
     public void getUserList(){
         final String userListKey = "UserList";
