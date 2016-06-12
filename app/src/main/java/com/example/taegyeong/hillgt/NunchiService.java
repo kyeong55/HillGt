@@ -1,9 +1,11 @@
 package com.example.taegyeong.hillgt;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
@@ -28,17 +30,21 @@ public class NunchiService extends Service {
 
     public final String FIREBASE_URL = "https://hillgt.firebaseIO.com";
     public final String HILLGT_REF = "HillGtRequest";
+    public final String TOTALSENT_REF = "TotalSent";
+    public final String NUNCHI_REF = "NunchiReturned";
 
     public Firebase rootRef;
     public ValueEventListener mConnectedListener;
     public boolean connected;
     public ChildEventListener childEventListener;
     public ValueEventListener valueEventListener;
+    public ValueEventListener totalSentListener;
     public String userID;
     public String userName;
     public Map<String,String> userListMap;
     public Map<String,Map<String,String>> todayHistoryMap;
     public int totalHistory;
+    public long totalSent;
 
     public boolean isBinded;
 
@@ -104,19 +110,23 @@ public class NunchiService extends Service {
         rootRef.child(HILLGT_REF).child(userID).addChildEventListener(childEventListener);
     }
 */
-    public void makeNotification(String hillgter) {
+    public void makeNotification(String hillgterID, String hillgterName) {
 //        Intent intent = new Intent(this, MainActivity.class);
 //        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
 //        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
 //                PendingIntent.FLAG_ONE_SHOT);
 
 //        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Uri soundUri=Uri.parse("android.resource://"+getPackageName()+"/raw/hillgt_high");
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText(hillgter+getString(R.string.noti_text))
-                .setAutoCancel(true);
-//                .setSound(defaultSoundUri)
+                .setContentText(hillgterName+getString(R.string.noti_text))
+                .setAutoCancel(true)
+                .setDefaults(Notification.DEFAULT_VIBRATE)
+                .setTicker("미리보기 입니다.")
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setSound(soundUri);
 //                .setContentIntent(pendingIntent);
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         Random r = new Random();
@@ -129,7 +139,8 @@ public class NunchiService extends Service {
         @Override
         public Integer doInBackground(Integer... params) {
             try {
-                Thread.sleep(1000*10);
+                //TODO: detect Nunchi
+                Thread.sleep(1000*7);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

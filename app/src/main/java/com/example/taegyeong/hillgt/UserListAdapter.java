@@ -8,6 +8,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.firebase.client.DataSnapshot;
+import com.firebase.client.FirebaseError;
+import com.firebase.client.ValueEventListener;
+
+import org.w3c.dom.Text;
+
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,14 +23,12 @@ import java.util.Map;
  */
 public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewHolder> {
 
-    private Context context;
     private String[] userIDs;
     private String[] userNames;
 
     private NunchiService service;
 
-    public UserListAdapter(Context context, NunchiService service){
-        this.context = context;
+    public UserListAdapter(NunchiService service){
         this.service = service;
         userIDs = new String[service.userListMap.size()];
         userNames = new String[service.userListMap.size()];
@@ -67,6 +71,18 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         newHillgt.put("timestamp",""+ Calendar.getInstance().getTimeInMillis());//System.currentTimeMillis());
         service.rootRef.child(service.HILLGT_REF).child(targetUser).push()
                 .setValue(newHillgt);
+//        service.rootRef.child(service.TOTALSENT_REF).child(service.userID).addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                Log.d("totalSent",dataSnapshot.toString());
+//                if (dataSnapshot.getValue() == null)
+//                    service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(1);
+//                else
+//                    service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(""+(Integer.parseInt((String)dataSnapshot.getValue()) + 1));
+//            }
+//            @Override public void onCancelled(FirebaseError firebaseError) {}
+//        });
+        service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(service.totalSent + 1);
     }
 
 //    @Override

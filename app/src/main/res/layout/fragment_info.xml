@@ -10,7 +10,6 @@
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:background="@color/colorTheme3"
-        android:layout_marginBottom="4dp"
         android:elevation="2dp">
         <ImageView
             android:src="@drawable/face_300px"
@@ -38,6 +37,8 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/info_history"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_marginLeft="@dimen/info_history_margin"
+        android:layout_marginRight="@dimen/info_history_margin"/>
 
 </LinearLayout>

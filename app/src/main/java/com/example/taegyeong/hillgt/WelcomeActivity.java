@@ -42,6 +42,7 @@ public class WelcomeActivity extends AppCompatActivity {
 
         instructionText.setTypeface(BrandonTypeface.branRegular);
         warningText.setTypeface(BrandonTypeface.branRegular);
+        userNameText.setTypeface(BrandonTypeface.branBold);
         startButton.setTypeface(BrandonTypeface.branBold);
 
         startButton.setOnClickListener(new View.OnClickListener() {
@@ -76,17 +77,12 @@ public class WelcomeActivity extends AppCompatActivity {
             warningText.setVisibility(View.VISIBLE);
         }
         else {
-//            Random r = new Random();
-//            String userID = "User_"+r.nextInt(100000);
             SharedPreferences prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
-//            prefs.edit().putString(PREFS_KEY_USERID, userID).commit();
-            prefs.edit().putString(PREFS_KEY_USERNAME, userName).commit();
+            prefs.edit().putString(PREFS_KEY_USERNAME, userName).apply();
             Intent intent = new Intent(this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-//            intent.putExtra("user_id", userID);
             intent.putExtra("user_name", userName);
             startActivity(intent);
-//            overridePendingTransition(R.anim.trans_activity_slide_left_in, R.anim.trans_activity_slide_left_out);
         }
     }
 

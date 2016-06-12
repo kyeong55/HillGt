@@ -14,6 +14,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,6 +72,9 @@ public class MainActivity extends AppCompatActivity {
         nunchiService.rootRef.child("UserList").removeEventListener(nunchiService.valueEventListener);
         nunchiService.valueEventListener = null;
         nunchiService.isBinded = false;
+        nunchiService.rootRef.child(nunchiService.TOTALSENT_REF).child(nunchiService.userID)
+                .removeEventListener(nunchiService.totalSentListener);
+        nunchiService.totalSentListener = null;
         unbindService(nunchiConnection);
         super.onDestroy();
     }
@@ -82,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
             nunchiService.isBinded = true;
             if (nunchiService.connected) {
                 getUserList();
+                updateHistory();
             }
             else {
                 nunchiService.mConnectedListener = nunchiService.rootRef.getRoot().child(".info/connected")
@@ -123,18 +128,21 @@ public class MainActivity extends AppCompatActivity {
                         Firebase newRef = userListRef.push();
                         newRef.setValue(nunchiService.userName);
                         nunchiService.userID = newRef.getKey();
+                        nunchiService.rootRef.child(nunchiService.TOTALSENT_REF).child(nunchiService.userID).setValue(0);
                         prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
                     }
                     else if (nunchiService.userID == null) {
                         Firebase newRef = userListRef.push();
                         newRef.setValue(nunchiService.userName);
                         nunchiService.userID = newRef.getKey();
+                        nunchiService.rootRef.child(nunchiService.TOTALSENT_REF).child(nunchiService.userID).setValue(0);
                         prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
                     }
                     else if (!nunchiService.userListMap.containsKey(nunchiService.userID)) {
                         Firebase newRef = userListRef.push();
                         newRef.setValue(nunchiService.userName);
                         nunchiService.userID = newRef.getKey();
+                        nunchiService.rootRef.child(nunchiService.TOTALSENT_REF).child(nunchiService.userID).setValue(0);
                         prefs.edit().putString("hillgt_userid",nunchiService.userID).apply();
                     }
                     if (nunchiService.userListMap != null) {
@@ -150,17 +158,23 @@ public class MainActivity extends AppCompatActivity {
 
         userListRef.addValueEventListener(nunchiService.valueEventListener);
 
-        Firebase fb = nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID);
-        fb.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String,Map<String,String>> historyMap = (HashMap) dataSnapshot.getValue();
-                nunchiService.totalHistory = historyMap.size();
-            }
-            @Override
-            public void onCancelled(FirebaseError firebaseError) {
-            }
-        });
+        try {
+            Firebase fb = nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID);
+            fb.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.getValue() == null)
+                        nunchiService.totalHistory = 0;
+                    else {
+                        Map<String, Map<String, String>> historyMap = (HashMap) dataSnapshot.getValue();
+                        nunchiService.totalHistory = historyMap.size();
+                    }
+                }
+                @Override
+                public void onCancelled(FirebaseError firebaseError) {
+                }
+            });
+        }catch (Exception e) {nunchiService.totalHistory = 0;}
     }
 
     public void addListener(){
@@ -172,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onChildAdded(DataSnapshot snapshot, String previousChildKey) {
                 Map<String,String> addedHillgt = (HashMap)snapshot.getValue();
-                nunchiService.makeNotification(addedHillgt.get("name"));
+                nunchiService.makeNotification(addedHillgt.get("id"),addedHillgt.get("name"));
                 nunchiService.totalHistory += 1;
                 if (nunchiService.isBinded)
                     updateHistory();
@@ -239,6 +253,7 @@ public class MainActivity extends AppCompatActivity {
 
         public void setUserListView(NunchiService nunchiService) {
             userListFragment.setUserList(nunchiService);
+            infoFragment.setUserInfo(nunchiService);
         }
 
         public void setHistoryView(NunchiService nunchiService) {
@@ -250,6 +265,8 @@ public class MainActivity extends AppCompatActivity {
 
         public RecyclerView historyView;
         public HistoryAdapter historyAdapter;
+        public TextView userName;
+        public TextView userDetail;
 
         public InfoFragment() {
         }
@@ -258,15 +275,43 @@ public class MainActivity extends AppCompatActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_info, container, false);
-            TextView userName = (TextView) rootView.findViewById(R.id.info_user_name);
-            TextView userDetail = (TextView) rootView.findViewById(R.id.info_user_detail);
+            userName = (TextView) rootView.findViewById(R.id.info_user_name);
+            userDetail = (TextView) rootView.findViewById(R.id.info_user_detail);
             historyView = (RecyclerView) rootView.findViewById(R.id.info_history);
             assert userName != null;
             assert userDetail != null;
             assert historyView != null;
             userName.setTypeface(BrandonTypeface.branBold);
             userDetail.setTypeface(BrandonTypeface.branRegular);
+
+            historyAdapter = new HistoryAdapter(getApplicationContext());
+            LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+            layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+            historyView.setHasFixedSize(true);
+            historyView.setLayoutManager(layoutManager);
+            historyView.setAdapter(historyAdapter);
+            historyView.setVerticalScrollBarEnabled(true);
+
             return rootView;
+        }
+
+        public void setUserInfo(final NunchiService nunchiService) {
+            userName.setText(nunchiService.userName);
+            if (nunchiService.totalSentListener != null)
+                return;
+            nunchiService.totalSentListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.getValue() != null) {
+                        userDetail.setText(dataSnapshot.getValue() + " Hillgt Sent");
+                        nunchiService.totalSent = (long) dataSnapshot.getValue();
+                    }
+                }
+                @Override public void onCancelled(FirebaseError firebaseError) {}
+            };
+            nunchiService.rootRef.child(nunchiService.TOTALSENT_REF).child(nunchiService.userID)
+                    .addValueEventListener(nunchiService.totalSentListener);
         }
 
         public void setHistoryList(NunchiService nunchiService) {
@@ -299,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void setUserList(NunchiService nunchiService){
-            userListAdapter = new UserListAdapter(getApplicationContext(),nunchiService);
+            userListAdapter = new UserListAdapter(nunchiService);
             LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
             layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 

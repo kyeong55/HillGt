@@ -13,10 +13,12 @@
     <dimen name="info_image_height">60dp</dimen>
     <dimen name="info_user_name_size">36sp</dimen>
     <dimen name="info_user_detail_size">20sp</dimen>
-    <dimen name="info_status_text_size">36sp</dimen>
-    <dimen name="info_status_text_padding">24dp</dimen>
+    <dimen name="info_status_text_size">32sp</dimen>
+    <dimen name="info_status_text_padding">12dp</dimen>
     <dimen name="info_history_username">32sp</dimen>
-    <dimen name="info_history_time">32sp</dimen>
+    <dimen name="info_history_time">28sp</dimen>
+    <dimen name="info_history_margin">12dp</dimen>
+    <dimen name="info_history_elem_padding">8dp</dimen>
 
     <dimen name="userlist_list_margin">12dp</dimen>
     <dimen name="userlist_text_size">36sp</dimen>

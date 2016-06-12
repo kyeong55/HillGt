@@ -15,8 +15,12 @@ import com.firebase.client.FirebaseError;
 import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,24 +32,46 @@ public class HistoryAdapter extends  RecyclerView.Adapter<HistoryAdapter.ViewHol
     private final int VIEW_TYPE_BODY = 1;
 
     private Context context;
-    private String[] statusSubtitle = {"TODAY","TOTAL"};
 
     private String[] userNames;
     private String[] timestamps;
 
     private int totalHistorySize;
 
-    public HistoryAdapter(Context context, NunchiService service){
+    public HistoryAdapter(Context context, final NunchiService service){
         this.context = context;
         userNames = new String[service.todayHistoryMap.size()];
         timestamps = new String[service.todayHistoryMap.size()];
-        int index=0;
-        for(Map.Entry<String,Map<String,String>> mapEntry : service.todayHistoryMap.entrySet()) {
-            userNames[index] = mapEntry.getValue().get("name");
-            timestamps[index] = getRelativeDateTimeString(mapEntry.getValue().get("timestamp"));
-            index++;
+
+        List<String> list = new ArrayList();
+        list.addAll(service.todayHistoryMap.keySet());
+
+        Collections.sort(list,new Comparator(){
+            public int compare(Object o1,Object o2){
+                Object v1 = service.todayHistoryMap.get(o1).get("timestamp");
+                Object v2 = service.todayHistoryMap.get(o2).get("timestamp");
+                return ((Comparable) v1).compareTo(v2);
+            }
+        });
+        Collections.reverse(list);
+
+        for (int i=0;i<list.size();i++) {
+            userNames[i] = service.todayHistoryMap.get(list.get(i)).get("name");
+            timestamps[i] = getRelativeDateTimeString(service.todayHistoryMap.get(list.get(i)).get("timestamp"));
         }
+//        int index=0;
+//        for(Map.Entry<String,Map<String,String>> mapEntry : service.todayHistoryMap.entrySet()) {
+//            userNames[index] = mapEntry.getValue().get("name");
+//            timestamps[index] = getRelativeDateTimeString(mapEntry.getValue().get("timestamp"));
+//            index++;
+//        }
         totalHistorySize = service.totalHistory;
+    }
+    public HistoryAdapter(Context context) {
+        this.context = context;
+        userNames = new String[0];
+        timestamps = new String[0];
+        totalHistorySize = 0;
     }
 
     @Override
@@ -66,41 +92,40 @@ public class HistoryAdapter extends  RecyclerView.Adapter<HistoryAdapter.ViewHol
     public void onBindViewHolder(final HistoryAdapter.ViewHolder holder, final int position) {
         switch (getItemViewType(position)) {
             case VIEW_TYPE_HEAD:
-                holder.headerSubtitle.setText(statusSubtitle[position]);
-                if (position == 0)
-                    holder.headerNum.setText(""+userNames.length);
-                else if (position == 1)
-                    holder.headerNum.setText(""+totalHistorySize);
+                holder.headerToday.setText(""+userNames.length);
+                holder.headerTotal.setText(""+totalHistorySize);
                 break;
             case VIEW_TYPE_BODY:
-                holder.hillgterName.setText(userNames[position-2]);
-                holder.hillgtTime.setText(timestamps[position-2]);
+                holder.hillgterName.setText(userNames[position-1]);
+                holder.hillgtTime.setText(timestamps[position-1]);
                 break;
         }
     }
 
     public String getRelativeDateTimeString(String timestamp) {
-        return (String) DateUtils.getRelativeDateTimeString(context,
-                Long.parseLong(timestamp),
-                DateUtils.MINUTE_IN_MILLIS,
-                DateUtils.WEEK_IN_MILLIS, 0);
+        String relativeTime = (String) DateUtils.getRelativeDateTimeString(context,
+                Long.parseLong(timestamp), DateUtils.MINUTE_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, 0);
+        int comma = relativeTime.indexOf(',');
+        if (comma < 0)
+            return relativeTime;
+        return relativeTime.substring(0,comma);
     }
     @Override
     public int getItemCount() {
-        return userNames.length + 2;
+        return userNames.length + 1;
     }
 
     @Override
     public int getItemViewType(int position){
-        if (position < 2)
+        if (position == 0)
             return VIEW_TYPE_HEAD;
         return VIEW_TYPE_BODY;
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        TextView headerSubtitle;
-        TextView headerNum;
+        TextView headerToday;
+        TextView headerTotal;
 
         TextView hillgterName;
         TextView hillgtTime;
@@ -109,10 +134,14 @@ public class HistoryAdapter extends  RecyclerView.Adapter<HistoryAdapter.ViewHol
             super(itemView);
             switch (viewType){
                 case VIEW_TYPE_HEAD:
-                    headerSubtitle = (TextView) itemView.findViewById(R.id.history_header_subtitle);
-                    headerNum = (TextView) itemView.findViewById(R.id.history_header_num);
-                    headerSubtitle.setTypeface(BrandonTypeface.branBold);
-                    headerNum.setTypeface(BrandonTypeface.branBold);
+                    TextView headerTodaySubtitle = (TextView) itemView.findViewById(R.id.history_header_today_subtitle);
+                    headerToday = (TextView) itemView.findViewById(R.id.history_header_today_num);
+                    TextView headerTotalSubtitle = (TextView) itemView.findViewById(R.id.history_header_total_subtitle);
+                    headerTotal = (TextView) itemView.findViewById(R.id.history_header_total_num);
+                    headerTodaySubtitle.setTypeface(BrandonTypeface.branBold);
+                    headerToday.setTypeface(BrandonTypeface.branBold);
+                    headerTotalSubtitle.setTypeface(BrandonTypeface.branBold);
+                    headerTotal.setTypeface(BrandonTypeface.branBold);
                     break;
                 case VIEW_TYPE_BODY:
                     hillgterName = (TextView) itemView.findViewById(R.id.history_user);
