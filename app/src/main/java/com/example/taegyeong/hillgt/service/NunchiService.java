@@ -11,7 +11,10 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.example.taegyeong.hillgt.R;
 import com.firebase.client.ChildEventListener;
@@ -142,8 +145,21 @@ public class NunchiService extends Service {
     }
 
     public class HillgtNunchiTask extends AsyncTask<String, Void, String> {
+
+        WakeLock mWakeLock;
+
         @Override
         public String doInBackground(String... params) {
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            if (mWakeLock != null) {
+                mWakeLock.release();
+                mWakeLock = null;
+                Log.d("HILLGT_WAKELOCK", "WakeLock Released");
+            }
+            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                    "HillGtWakeLock");
+            mWakeLock.acquire();
+            Log.d("HILLGT_WAKELOCK", "WakeLock Acquired");
             try {
                 // TODO detect Nunchi
                 Thread.sleep(1000*7);
@@ -161,6 +177,11 @@ public class NunchiService extends Service {
                 rootRef.child(NUNCHI_REF).child(result).child(userID).setValue(val);
             }
             notificationManager.cancel(notiIDMap.get(result));
+            if (mWakeLock != null) {
+                mWakeLock.release();
+                mWakeLock = null;
+                Log.d("HILLGT_WAKELOCK", "WakeLock Released");
+            }
         }
     }
 }
