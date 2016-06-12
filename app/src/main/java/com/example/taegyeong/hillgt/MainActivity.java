@@ -347,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void setUserList(NunchiService nunchiService){
-            userListAdapter = new UserListAdapter(nunchiService);
+            userListAdapter = new UserListAdapter(getApplicationContext(), nunchiService);
             LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
             layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 

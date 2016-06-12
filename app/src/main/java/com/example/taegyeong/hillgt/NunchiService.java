@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -117,7 +119,10 @@ public class NunchiService extends Service {
 
 //        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         Uri soundUri=Uri.parse("android.resource://"+getPackageName()+"/raw/hillgt_high");
+        BitmapDrawable drawable = (BitmapDrawable) getResources().getDrawable(R.drawable.face_300px);
+        Bitmap bitmap = drawable.getBitmap();
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setLargeIcon(bitmap)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(hillgterName+getString(R.string.noti_text))

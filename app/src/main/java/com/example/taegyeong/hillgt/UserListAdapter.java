@@ -26,13 +26,16 @@ import java.util.Map;
  */
 public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewHolder> {
 
+    private Context context;
+
     private String[] userIDs;
     private String[] userNames;
     private ValueEventListener[] listeners;
 
     private NunchiService service;
 
-    public UserListAdapter(NunchiService service){
+    public UserListAdapter(Context context, NunchiService service){
+        this.context = context;
         this.service = service;
         userIDs = new String[service.userListMap.size()];
         userNames = new String[service.userListMap.size()];
@@ -106,13 +109,16 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(service.totalSent + 1);
     }
 
-    public void setImoticon(String nunchi, TextView result) {
+    public void setImoticon(String nunchi, TextView resultText) {
         if (nunchi.compareTo("Available") == 0) {
-            result.setText(" ... ^o^");
+            resultText.setText(" ... ^o^");
+            resultText.setTextColor(context.getResources().getColor(R.color.colorTheme4));
         } else if (nunchi.compareTo("MightAvailable") == 0) {
-            result.setText(" ... -_-?");
+            resultText.setText(" ... -_-?");
+            resultText.setTextColor(context.getResources().getColor(R.color.colorTheme3));
         } else if (nunchi.compareTo("NotAvailable") == 0) {
-            result.setText(" ... zZzZ");
+            resultText.setTextColor(context.getResources().getColor(R.color.colorText));
+            resultText.setText(" ... zZzZ");
         }
     }
 

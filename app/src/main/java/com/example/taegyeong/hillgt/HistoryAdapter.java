@@ -104,7 +104,7 @@ public class HistoryAdapter extends  RecyclerView.Adapter<HistoryAdapter.ViewHol
 
     public String getRelativeDateTimeString(String timestamp) {
         String relativeTime = (String) DateUtils.getRelativeDateTimeString(context,
-                Long.parseLong(timestamp), DateUtils.MINUTE_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, 0);
+                Long.parseLong(timestamp), DateUtils.SECOND_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, 0);
         int comma = relativeTime.indexOf(',');
         if (comma < 0)
             return relativeTime;
