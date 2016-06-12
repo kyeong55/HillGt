@@ -7,6 +7,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -63,9 +65,8 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
             @Override
             public void onClick(View v) {
                 requestHillgt(userIDs[position]);
-                holder.hillgtSent.setVisibility(View.VISIBLE);
                 holder.hillgtButton.setClickable(false);
-                holder.hillgtButton.setVisibility(View.GONE);
+                showIcon(holder);
                 holder.hillgtProgress.setVisibility(View.VISIBLE);
                 holder.nunchiResult.setVisibility(View.GONE);
                 new showProgressTask().execute(holder);
@@ -84,6 +85,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
                             holder.nunchiResult.setVisibility(View.VISIBLE);
                             holder.hillgtButton.setClickable(true);
                             holder.hillgtButton.setVisibility(View.VISIBLE);
+//                            blink(holder.nunchiResult);
                         }
                     }
                     @Override public void onCancelled(FirebaseError firebaseError) {}
@@ -92,6 +94,28 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
                         .addValueEventListener(listeners[position]);
             }
         });
+    }
+
+    public void showIcon(UserListAdapter.ViewHolder holder) {
+        Animation vis_anim = AnimationUtils.loadAnimation(context, R.anim.click_visible_up);
+        Animation gone_anim = AnimationUtils.loadAnimation(context, R.anim.click_gone_up);
+        holder.hillgtSent.setVisibility(View.VISIBLE);
+        holder.hillgtButton.setVisibility(View.GONE);
+        holder.hillgtSent.startAnimation(vis_anim);
+        holder.hillgtButton.startAnimation(gone_anim);
+    }
+    public void hideIcon(UserListAdapter.ViewHolder holder) {
+        Animation vis_anim = AnimationUtils.loadAnimation(context, R.anim.click_visible_down);
+        Animation gone_anim = AnimationUtils.loadAnimation(context, R.anim.click_gone_down);
+        holder.hillgtSent.setVisibility(View.GONE);
+        holder.hillgtButton.setVisibility(View.VISIBLE);
+        holder.hillgtSent.startAnimation(gone_anim);
+        holder.hillgtButton.startAnimation(vis_anim);
+    }
+    public void blink(View view) {
+        Animation blink_anim = AnimationUtils.loadAnimation(context, R.anim.blink_twice);
+        view.setVisibility(View.VISIBLE);
+        view.startAnimation(blink_anim);
     }
 
     @Override
@@ -156,8 +180,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         @Override
         public void onPostExecute(UserListAdapter.ViewHolder result) {
             super.onPostExecute(result);
-            result.hillgtSent.setVisibility(View.GONE);
-            result.hillgtButton.setVisibility(View.VISIBLE);
+            hideIcon(result);
         }
     }
 }
