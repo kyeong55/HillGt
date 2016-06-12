@@ -19,6 +19,11 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * Created by yjchang on 6/13/16.
  */
@@ -42,41 +47,72 @@ public class NunchitbabService extends NotificationListenerService {
     private double lastMagAccel;
     private int lastBatteryState;
 
+    public static final List<HillGtRequest> mHillGtRequestList = new ArrayList<>();
+    private class HillGtRequest {
+        int id;
+        boolean attentive;
+        boolean mightAttentive;
+        long timestamp;
+        HillGtRequest(int id, long timestamp) {
+            this.id = id;
+            this.attentive = false;
+            this.mightAttentive = false;
+            this.timestamp = timestamp;
+        }
+    }
+    private void buildHillGtRequest(int id) {
+        mHillGtRequestList.add(new HillGtRequest(id,
+                Calendar.getInstance().getTimeInMillis()));
+        Log.d("HILLGT_RQ", "NEW HillGt RQ #" + id);
+    }
+    private void positiveActionDetected() {
+        for (HillGtRequest hgr : mHillGtRequestList) {
+            hgr.attentive = true;
+        }
+    }
+    private void negativeActionDetected() {
+        for (HillGtRequest hgr : mHillGtRequestList) {
+            hgr.mightAttentive |= hgr.attentive;
+            hgr.attentive = false;
+        }
+    }
+    public static String getHillGtValue(int notificationId) {
+        Iterator<HillGtRequest> i = mHillGtRequestList.iterator();
+        HillGtRequest hgr = null;
+        String retval = null;
+        while (i.hasNext()) {
+            hgr = i.next();
+            if (hgr.id == notificationId) {
+                retval = hgr.attentive ? "Available" :
+                        (hgr.mightAttentive ? "MightAvailable" : "NotAvailable");
+                i.remove();
+            }
+        }
+        Log.d("HILLGT_RQ", "REMOVE HillGt RQ #" + notificationId + " : " + retval);
+        assert(retval != null);
+        return retval;
+    }
 
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         Notification n = sbn.getNotification();
-        Log.d(DEBUGLOG_NOTI, "onNotificationPosted");
         Notification mNotification=sbn.getNotification();
         Bundle extras = mNotification.extras;
-        JSONObject json = new JSONObject();
-        try {
-            json.put("id", sbn.getId());
-            json.put("package", sbn.getPackageName());
-            json.put("posttime", sbn.getPostTime());
-            json.put("title", extras.getString(Notification.EXTRA_TITLE));
-//            save("noti_posted", json);
-        } catch (JSONException e) {
-            e.printStackTrace();
+        Log.d(DEBUGLOG_NOTI, "onNotificationPosted ["+sbn.getId()+", "+sbn.getPackageName()+"] "
+                + extras.getString(Notification.EXTRA_TITLE));
+
+        if (sbn.getPackageName().equals(getPackageName())) {
+            buildHillGtRequest(sbn.getId());
         }
     }
 
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         Notification n = sbn.getNotification();
-        Log.d(DEBUGLOG_NOTI, "onNotificationRemoved");
         Notification mNotification=sbn.getNotification();
         Bundle extras = mNotification.extras;
-        JSONObject json = new JSONObject();
-        try {
-            json.put("id", sbn.getId());
-            json.put("package", sbn.getPackageName());
-            json.put("posttime", sbn.getPostTime());
-            json.put("title", extras.getString(Notification.EXTRA_TITLE));
-//            save("noti_removed", json);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        Log.d(DEBUGLOG_NOTI, "onNotificationRemoved ["+sbn.getId()+", "+sbn.getPackageName()+"] "
+                + extras.getString(Notification.EXTRA_TITLE));
     }
 
     @Override
@@ -84,7 +120,6 @@ public class NunchitbabService extends NotificationListenerService {
         super.onCreate();
 
         Log.d(DEBUGLOG_NOTI, "service created");
-//        save("nunchitbab_start", new JSONObject());
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         defineBroadcastReceivers();
@@ -96,7 +131,6 @@ public class NunchitbabService extends NotificationListenerService {
     @Override
     public void onDestroy(){
         Log.d(DEBUGLOG_NOTI, "service destroyed");
-//        save("nunchitbab_end", new JSONObject());
 
         unregisterAll();
 
@@ -119,25 +153,20 @@ public class NunchitbabService extends NotificationListenerService {
             public void onReceive(Context context, Intent intent) {
                 int ringerMode = ((AudioManager)context.getSystemService(Context.AUDIO_SERVICE))
                         .getRingerMode();
-                JSONObject json = new JSONObject();
-                try {
-                    switch (ringerMode) {
-                        case AudioManager.RINGER_MODE_SILENT:
-                            Log.d("getRingerMode", "Silent");
-                            json.put("mode", "silent");
-                            break;
-                        case AudioManager.RINGER_MODE_VIBRATE:
-                            Log.d("getRingerMode", "Vibrate");
-                            json.put("mode", "vibrate");
-                            break;
-                        case AudioManager.RINGER_MODE_NORMAL:
-                            Log.d("getRingerMode", "Bell");
-                            json.put("mode", "bell");
-                            break;
-                    }
-//                    save("ringer", json);
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                switch (ringerMode) {
+                    case AudioManager.RINGER_MODE_SILENT:
+                        Log.d("getRingerMode", "Silent");
+                        positiveActionDetected();
+                        negativeActionDetected();
+                        break;
+                    case AudioManager.RINGER_MODE_VIBRATE:
+                        Log.d("getRingerMode", "Vibrate");
+                        positiveActionDetected();
+                        break;
+                    case AudioManager.RINGER_MODE_NORMAL:
+                        Log.d("getRingerMode", "Bell");
+                        positiveActionDetected();
+                        break;
                 }
             }
         };
@@ -163,13 +192,6 @@ public class NunchitbabService extends NotificationListenerService {
                         return;
                     lastBatteryState = batteryStatus;
                     Log.d(DEBUGLOG_SENSOR, "battery status " + batteryStatus);
-                    JSONObject json = new JSONObject();
-                    try {
-                        json.put("status", batteryStatus);
-//                        save("battery", json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
                 }
             }
         };
@@ -187,22 +209,9 @@ public class NunchitbabService extends NotificationListenerService {
                 String action = intent.getAction();
                 if (action.equals(Intent.ACTION_SCREEN_OFF)){
                     Log.d(DEBUGLOG_SENSOR, "screen off");
-                    JSONObject json = new JSONObject();
-                    try {
-                        json.put("onoff", 0);
-//                        save("screen", json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
                 } else if (action.equals(Intent.ACTION_SCREEN_ON)){
                     Log.d(DEBUGLOG_SENSOR, "screen on");
-                    JSONObject json = new JSONObject();
-                    try {
-                        json.put("onoff", 1);
-//                        save("screen", json);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    positiveActionDetected();
                 }
             }
         };
@@ -216,7 +225,7 @@ public class NunchitbabService extends NotificationListenerService {
                 String action = intent.getAction();
                 if (action.equals(Intent.ACTION_USER_PRESENT)) {
                     Log.d(DEBUGLOG_SENSOR, "unlocked");
-//                    save("unlock", new JSONObject());
+                    positiveActionDetected();
                 }
             }
         };
@@ -233,12 +242,7 @@ public class NunchitbabService extends NotificationListenerService {
                 float proximityDistance = event.values[0];
                 Log.d(DEBUGLOG_SENSOR,"proximity sensor changed: "+proximityDistance+"(cm)");
                 JSONObject json = new JSONObject();
-                try {
-                    json.put("distance", proximityDistance);
-//                    save("proximity", json);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                positiveActionDetected();
             }
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -252,13 +256,7 @@ public class NunchitbabService extends NotificationListenerService {
             public void onSensorChanged(SensorEvent event) {
                 float lightLevel = event.values[0];
                 Log.d(DEBUGLOG_SENSOR,"light sensor changed: "+lightLevel+"(lx)");
-                JSONObject json = new JSONObject();
-                try {
-                    json.put("level", lightLevel);
-//                    save("light", json);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                positiveActionDetected();
             }
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}
@@ -279,16 +277,7 @@ public class NunchitbabService extends NotificationListenerService {
                 }
                 lastMagAccel = magAccel;
                 Log.d(DEBUGLOG_SENSOR,"accel sensor changed: "+magAccel+"(m/s^2)");
-                JSONObject json = new JSONObject();
-                try {
-                    json.put("x", xAccel);
-                    json.put("y", yAccel);
-                    json.put("z", zAccel);
-                    json.put("mag", magAccel);
-//                    save("accel", json);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                positiveActionDetected();
             }
             @Override
             public void onAccuracyChanged(Sensor sensor, int accuracy) {}

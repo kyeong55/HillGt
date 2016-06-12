@@ -156,12 +156,10 @@ public class NunchiService extends Service {
         @Override
         public void onPostExecute(String result) {
             super.onPostExecute(result);
-            if (notiIDMap.get(result) < 100000/3)
-                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("Available");
-            else if (notiIDMap.get(result) < 100000*2/3)
-                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("MightAvailable");
-            else
-                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("NotAvailable");
+            String val = NunchitbabService.getHillGtValue(notiIDMap.get(result));
+            if (val != null) {
+                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue(val);
+            }
             notificationManager.cancel(notiIDMap.get(result));
         }
     }
