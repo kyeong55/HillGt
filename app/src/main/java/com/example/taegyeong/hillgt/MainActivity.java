@@ -1,12 +1,14 @@
 package com.example.taegyeong.hillgt;
 
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -20,6 +22,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.taegyeong.hillgt.adapter.HistoryAdapter;
+import com.example.taegyeong.hillgt.adapter.UserListAdapter;
+import com.example.taegyeong.hillgt.service.NunchiService;
+import com.example.taegyeong.hillgt.service.NunchitbabService;
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -285,6 +291,33 @@ public class MainActivity extends AppCompatActivity {
             assert historyView != null;
             userName.setTypeface(BrandonTypeface.branBold);
             userDetail.setTypeface(BrandonTypeface.branRegular);
+
+            userName.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    ContentResolver contentResolver = getContext().getContentResolver();
+                    String enabledNotificationListeners =
+                            Settings.Secure.getString(contentResolver,
+                                    "enabled_notification_listeners");
+                    String packageName = NunchitbabService.class.getName();
+                    if (enabledNotificationListeners == null ||
+                            !enabledNotificationListeners.contains(packageName)) {
+                        Intent notificationSettingIntent =
+                                new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+                        startActivity(notificationSettingIntent);
+                    }
+                }
+            });
+
+            userName.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    Intent notificationSettingIntent =
+                            new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+                    startActivity(notificationSettingIntent);
+                    return true;
+                }
+            });
 
             historyAdapter = new HistoryAdapter(getApplicationContext());
             LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());

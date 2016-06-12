@@ -1,27 +1,21 @@
-package com.example.taegyeong.hillgt;
+package com.example.taegyeong.hillgt.adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.Query;
-import com.firebase.client.ValueEventListener;
+import com.example.taegyeong.hillgt.BrandonTypeface;
+import com.example.taegyeong.hillgt.service.NunchiService;
+import com.example.taegyeong.hillgt.R;
 
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by taegyeong on 16. 6. 12..

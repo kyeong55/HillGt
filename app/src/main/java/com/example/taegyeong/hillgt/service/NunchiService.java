@@ -1,4 +1,4 @@
-package com.example.taegyeong.hillgt;
+package com.example.taegyeong.hillgt.service;
 
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -13,6 +13,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 
+import com.example.taegyeong.hillgt.R;
 import com.firebase.client.ChildEventListener;
 import com.firebase.client.Firebase;
 import com.firebase.client.ValueEventListener;
@@ -53,7 +54,7 @@ public class NunchiService extends Service {
     private NotificationManager notificationManager;
 
     public class NunchiBinder extends Binder {
-        NunchiService getService() {
+        public NunchiService getService() {
             return NunchiService.this;
         }
     }
@@ -144,7 +145,7 @@ public class NunchiService extends Service {
         @Override
         public String doInBackground(String... params) {
             try {
-                //TODO: detect Nunchi
+                // TODO detect Nunchi
                 Thread.sleep(1000*7);
             } catch (InterruptedException e) {
                 e.printStackTrace();

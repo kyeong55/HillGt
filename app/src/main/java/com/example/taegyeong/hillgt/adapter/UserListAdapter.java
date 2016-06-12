@@ -1,4 +1,4 @@
-package com.example.taegyeong.hillgt;
+package com.example.taegyeong.hillgt.adapter;
 
 import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
@@ -7,15 +7,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.taegyeong.hillgt.BrandonTypeface;
+import com.example.taegyeong.hillgt.service.NunchiService;
+import com.example.taegyeong.hillgt.R;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
-
-import org.w3c.dom.Text;
 
 import java.util.Calendar;
 import java.util.HashMap;
