@@ -1,11 +1,14 @@
 package com.example.taegyeong.hillgt;
 
+import android.os.AsyncTask;
 import android.support.v7.widget.RecyclerView;
 import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.firebase.client.DataSnapshot;
@@ -25,6 +28,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
 
     private String[] userIDs;
     private String[] userNames;
+    private ValueEventListener[] listeners;
 
     private NunchiService service;
 
@@ -32,6 +36,7 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         this.service = service;
         userIDs = new String[service.userListMap.size()];
         userNames = new String[service.userListMap.size()];
+        listeners = new ValueEventListener[service.userListMap.size()];
         int index=0;
         for(Map.Entry<String,String> mapEntry : service.userListMap.entrySet()) {
             userIDs[index] = mapEntry.getKey();
@@ -49,12 +54,39 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
     }
 
     @Override
-    public void onBindViewHolder(UserListAdapter.ViewHolder holder, final int position) {
+    public void onBindViewHolder(final UserListAdapter.ViewHolder holder, final int position) {
         holder.userNameText.setText(userNames[position]);
-        holder.userNameText.setOnClickListener(new View.OnClickListener() {
+        holder.hillgtButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 requestHillgt(userIDs[position]);
+                holder.hillgtSent.setVisibility(View.VISIBLE);
+                holder.hillgtButton.setClickable(false);
+                holder.hillgtButton.setVisibility(View.GONE);
+                holder.hillgtProgress.setVisibility(View.VISIBLE);
+                holder.nunchiResult.setVisibility(View.GONE);
+                new showProgressTask().execute(holder);
+                listeners[position] = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        Log.d("debugging_response",dataSnapshot.toString());
+                        if (dataSnapshot.getValue() != null) {
+                            setImoticon((String) dataSnapshot.getValue(), holder.nunchiResult);
+                            service.rootRef.child(service.NUNCHI_REF).child(service.userID).child(userIDs[position])
+                                    .removeEventListener(listeners[position]);
+                            service.rootRef.child(service.NUNCHI_REF).child(service.userID).child(userIDs[position])
+                                    .removeValue();
+                            holder.hillgtSent.setVisibility(View.INVISIBLE);
+                            holder.hillgtProgress.setVisibility(View.GONE);
+                            holder.nunchiResult.setVisibility(View.VISIBLE);
+                            holder.hillgtButton.setClickable(true);
+                            holder.hillgtButton.setVisibility(View.VISIBLE);
+                        }
+                    }
+                    @Override public void onCancelled(FirebaseError firebaseError) {}
+                };
+                service.rootRef.child(service.NUNCHI_REF).child(service.userID).child(userIDs[position])
+                        .addValueEventListener(listeners[position]);
             }
         });
     }
@@ -71,35 +103,55 @@ public class UserListAdapter extends  RecyclerView.Adapter<UserListAdapter.ViewH
         newHillgt.put("timestamp",""+ Calendar.getInstance().getTimeInMillis());//System.currentTimeMillis());
         service.rootRef.child(service.HILLGT_REF).child(targetUser).push()
                 .setValue(newHillgt);
-//        service.rootRef.child(service.TOTALSENT_REF).child(service.userID).addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(DataSnapshot dataSnapshot) {
-//                Log.d("totalSent",dataSnapshot.toString());
-//                if (dataSnapshot.getValue() == null)
-//                    service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(1);
-//                else
-//                    service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(""+(Integer.parseInt((String)dataSnapshot.getValue()) + 1));
-//            }
-//            @Override public void onCancelled(FirebaseError firebaseError) {}
-//        });
         service.rootRef.child(service.TOTALSENT_REF).child(service.userID).setValue(service.totalSent + 1);
     }
 
-//    @Override
-//    public int getItemViewType(int position){
-//        if (fileTracker.getCurrentFileNum() == 0)
-//            return VIEW_TYPE_EMPTY;
-//        return VIEW_TYPE_ELEM;
-//    }
+    public void setImoticon(String nunchi, TextView result) {
+        if (nunchi.compareTo("Available") == 0) {
+            result.setText(" ... ^o^");
+        } else if (nunchi.compareTo("MightAvailable") == 0) {
+            result.setText(" ... -_-?");
+        } else if (nunchi.compareTo("NotAvailable") == 0) {
+            result.setText(" ... zZzZ");
+        }
+    }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView userNameText;
+        TextView nunchiResult;
+        ProgressBar hillgtProgress;
+        View hillgtSent;
+        View hillgtButton;
 
         public ViewHolder(View itemView) {
             super(itemView);
             userNameText = (TextView)itemView.findViewById(R.id.userlist_elem_username);
+            nunchiResult = (TextView)itemView.findViewById(R.id.userlist_elem_result);
+            hillgtProgress = (ProgressBar)itemView.findViewById(R.id.userlist_elem_progressbar);
+            hillgtSent = itemView.findViewById(R.id.userlist_elem_sent);
+            hillgtButton = itemView.findViewById(R.id.userlist_elem_button);
             userNameText.setTypeface(BrandonTypeface.branBold);
+            nunchiResult.setTypeface(BrandonTypeface.branBold);
+        }
+    }
+
+    public class showProgressTask extends AsyncTask<UserListAdapter.ViewHolder, Void, UserListAdapter.ViewHolder> {
+        @Override
+        public UserListAdapter.ViewHolder doInBackground(UserListAdapter.ViewHolder... params) {
+            try {
+                Thread.sleep(1000*2);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return params[0];
+        }
+
+        @Override
+        public void onPostExecute(UserListAdapter.ViewHolder result) {
+            super.onPostExecute(result);
+            result.hillgtSent.setVisibility(View.GONE);
+            result.hillgtButton.setVisibility(View.VISIBLE);
         }
     }
 }

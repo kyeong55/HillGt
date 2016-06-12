@@ -190,13 +190,15 @@ public class MainActivity extends AppCompatActivity {
                 nunchiService.totalHistory += 1;
                 if (nunchiService.isBinded)
                     updateHistory();
+                prefs.edit().putLong("checkedTime",Long.parseLong(addedHillgt.get("timestamp"))).apply();
             }
             @Override public void onChildChanged(DataSnapshot dataSnapshot, String s) {}
             @Override public void onChildRemoved(DataSnapshot dataSnapshot) {}
             @Override public void onChildMoved(DataSnapshot dataSnapshot, String s) {}
             @Override public void onCancelled(FirebaseError firebaseError) {}
         };
-        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID)
+        Long checkedTime = prefs.getLong("checkedTime",0) + 1;
+        nunchiService.rootRef.child(nunchiService.HILLGT_REF).child(nunchiService.userID).orderByChild("timestamp").startAt(checkedTime+"")
                 .addChildEventListener(nunchiService.childEventListener);
     }
 
@@ -315,6 +317,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void setHistoryList(NunchiService nunchiService) {
+            Log.d("setHistoryList",nunchiService.todayHistoryMap.size()+"");
             historyAdapter = new HistoryAdapter(getApplicationContext(),nunchiService);
             LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
             layoutManager.setOrientation(LinearLayoutManager.VERTICAL);

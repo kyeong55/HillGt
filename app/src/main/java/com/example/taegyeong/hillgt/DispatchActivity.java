@@ -24,7 +24,7 @@ public class DispatchActivity extends AppCompatActivity {
 
     private void setupUser() {
         SharedPreferences prefs = getApplication().getSharedPreferences("HillGtPrefs", 0);
-//        prefs.edit().remove(PREFS_KEY_USERID).apply();
+        prefs.edit().remove(PREFS_KEY_USERID).apply();
         String userID = prefs.getString(PREFS_KEY_USERID, null);
         String userName = prefs.getString(PREFS_KEY_USERNAME, null);
         if ((userID == null)||(userName == null)) {

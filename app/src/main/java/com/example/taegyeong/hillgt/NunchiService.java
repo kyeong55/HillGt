@@ -10,13 +10,9 @@ import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 import com.firebase.client.ChildEventListener;
-import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
-import com.firebase.client.FirebaseError;
-import com.firebase.client.Query;
 import com.firebase.client.ValueEventListener;
 
 import java.util.HashMap;
@@ -45,6 +41,8 @@ public class NunchiService extends Service {
     public Map<String,Map<String,String>> todayHistoryMap;
     public int totalHistory;
     public long totalSent;
+
+    public Map<String,Integer> notiIDMap;
 
     public boolean isBinded;
 
@@ -82,6 +80,7 @@ public class NunchiService extends Service {
     public void onCreate(){
         super.onCreate();
         connected = false;
+        notiIDMap = new HashMap<>();
     }
 
     @Override
@@ -124,7 +123,7 @@ public class NunchiService extends Service {
                 .setContentText(hillgterName+getString(R.string.noti_text))
                 .setAutoCancel(true)
                 .setDefaults(Notification.DEFAULT_VIBRATE)
-                .setTicker("미리보기 입니다.")
+                .setTicker("힐끗")
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setSound(soundUri);
 //                .setContentIntent(pendingIntent);
@@ -132,12 +131,13 @@ public class NunchiService extends Service {
         Random r = new Random();
         int notificationID = r.nextInt(100000);
         notificationManager.notify(notificationID, notificationBuilder.build());
-        new HillgtNunchiTask().execute(notificationID);
+        notiIDMap.put(hillgterID,notificationID);
+        new HillgtNunchiTask().execute(hillgterID);
     }
 
-    public class HillgtNunchiTask extends AsyncTask<Integer, Void, Integer> {
+    public class HillgtNunchiTask extends AsyncTask<String, Void, String> {
         @Override
-        public Integer doInBackground(Integer... params) {
+        public String doInBackground(String... params) {
             try {
                 //TODO: detect Nunchi
                 Thread.sleep(1000*7);
@@ -148,9 +148,15 @@ public class NunchiService extends Service {
         }
 
         @Override
-        public void onPostExecute(Integer result) {
+        public void onPostExecute(String result) {
             super.onPostExecute(result);
-            notificationManager.cancel(result);
+            if (notiIDMap.get(result) < 100000/3)
+                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("Available");
+            else if (notiIDMap.get(result) < 100000*2/3)
+                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("MightAvailable");
+            else
+                rootRef.child(NUNCHI_REF).child(result).child(userID).setValue("NotAvailable");
+            notificationManager.cancel(notiIDMap.get(result));
         }
     }
 }
