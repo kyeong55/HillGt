@@ -8,7 +8,7 @@ before starting an actual conversation, i.e. tapping someone's shoulder, calling
 name, or staring at someone hoping he/she notice you have something to speak. HillGt 
 tried to transplant these behaviors to the smartphone.
 
-The name *HillGt* is originated '힐끗' a Korean word that denotes *glancing*.
+The name *HillGt* is originated `힐끗` a Korean word that denotes *glancing*.
 
 ## How it works
 
@@ -20,7 +20,7 @@ available / not available.
 
 ## Architecture
 
-HillGt is built on top of two android services: `NunchiBab` and `Nunchi`.
+HillGt is built on top of two android services: `NunchitBab` and `Nunchi`.
 `NunchitBab` is a data collection module that collect data from smartphone sensors
 and convert them to fit `Nunchi` service. `Nunchi` is an insight generation module that
 determine how attentive current smartphone user is.
