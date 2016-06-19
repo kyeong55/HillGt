@@ -37,3 +37,4 @@ These are the materials used for demo presentation conducted in class.
 * [Presentation File](/docs/presentation.pdf)
 * [Explanation Video](/docs/explanation.mov)
 * [Demo Video](/docs/demo.mp4)
+* [Final Report](/docs/finalreport.pdf)
